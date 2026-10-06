@@ -15564,11 +15564,218 @@ namespace xcas {
 
   const int max_lines_saved=50;
 
+  // =====================================================================
+  // KhiCAS steps() feature.
+  // Remembers the last successful factor()/diff()/integrate() evaluation and
+  // prints a short step-by-step explanation when the user types steps().
+  // * Intercepted in run() next to the other console built-ins, so Giac's
+  //   lexer/parser are untouched.
+  // * Only three small bounded strings are stored (NumWorks RAM is tight).
+  // * Explanations = templates + ONE-LEVEL rule expansion computed with
+  //   Giac's own _derive/_integrate/_coeff on subexpressions. The CAS core
+  //   algorithms are NOT reimplemented.
+  // * Output uses only Console_Output/Console_NewLine: no new EADK calls,
+  //   so this is independent of the EADK/OS version (incl. v26).
+  // =====================================================================
+  namespace {
+    std::string khicas_steps_input;   // e.g. "factor(x^2-5*x+6)"
+    std::string khicas_steps_optype;  // "factor"|"diff"|"integrate"|""
+    std::string khicas_steps_result;  // printed result, truncated
+    const size_t KHICAS_STEPS_MAXLEN = 256;
+
+    // Trim ASCII whitespace from a console line.
+    std::string khicas_trim(const std::string & s){
+      size_t a = s.find_first_not_of(" \t\r\n");
+      if (a==std::string::npos) return std::string();
+      size_t b = s.find_last_not_of(" \t\r\n");
+      return s.substr(a, b-a+1);
+    }
+
+    // Doubles that are really integers print without ".000000".
+    std::string khicas_num(double d){
+      char buf[64];
+      if (d==floor(d) && fabs(d)<1e15) snprintf(buf,sizeof(buf),"%.0f",d);
+      else snprintf(buf,sizeof(buf),"%.6g",d);
+      return std::string(buf);
+    }
+
+    // gen -> string, truncated for the small console.
+    std::string khicas_gstr(const gen & g, giac::context * contextptr){
+      std::string s = g.print(contextptr);
+      if (s.size()>KHICAS_STEPS_MAXLEN) s = s.substr(0,KHICAS_STEPS_MAXLEN-3)+"...";
+      return s;
+    }
+
+    // Accept steps, steps(), last_steps, last_steps().
+    bool khicas_is_steps_cmd(const char * s){
+      std::string t = khicas_trim(s);
+      return t=="steps" || t=="steps()" || t=="last_steps" || t=="last_steps()";
+    }
+
+    // Numeric gen -> double (via evalf); false for symbolic coeffs.
+    bool khicas_todouble(const gen & g, double & d, giac::context * contextptr){
+      gen e = _evalf(g,1,contextptr);
+      if (e.type==_DOUBLE_){ d=e._DOUBLE_val; return true; }
+      if (e.type==_INT_){ d=e._INT_val; return true; }
+      return false;
+    }
+
+    // ---- factor: discriminant+roots for numeric quadratics, else template.
+    std::vector<std::string> khicas_steps_factor(const gen & arg, const std::string & resstr, giac::context * contextptr){
+      std::vector<std::string> out;
+      out.push_back("Steps for: factor(" + khicas_gstr(arg,contextptr) + ")");
+      bool done = false;
+      gen vars = _lname(arg, contextptr); // variables occurring in arg
+      if (vars.type==_VECT && vars._VECTptr->size()==1){
+        gen x = vars._VECTptr->front();
+        gen co = _coeff(makesequence(arg,x), contextptr); // ascending [c,b,a]
+        if (co.type==_VECT && co._VECTptr->size()==3){
+          double a,b,c;
+          if (khicas_todouble(co._VECTptr->at(2),a,contextptr) &&
+              khicas_todouble(co._VECTptr->at(1),b,contextptr) &&
+              khicas_todouble(co._VECTptr->at(0),c,contextptr) && a!=0){
+            double D = b*b-4*a*c;
+            out.push_back("1. Quadratic in "+khicas_gstr(x,contextptr)+": a="+khicas_num(a)+", b="+khicas_num(b)+", c="+khicas_num(c)+".");
+            out.push_back("2. Discriminant D = b^2-4ac = "+khicas_num(D)+".");
+            if (D<0) out.push_back("3. D < 0: no real roots (irreducible over R).");
+            else out.push_back("3. Roots: x = (-b +/- sqrt(D))/(2a) = "+khicas_num((-b+sqrt(D))/(2*a))+", "+khicas_num((-b-sqrt(D))/(2*a))+".");
+            out.push_back("4. => "+resstr);
+            done = true;
+          }
+        }
+      }
+      if (!done){ // generic fallback + expand() self-check via Giac itself
+        out.push_back("1. Factor the polynomial over the integers Z.");
+        out.push_back("2. => "+resstr);
+        if (resstr.size()<3 || resstr.substr(resstr.size()-3)!="..."){
+          gen chk = _expand(gen(resstr.c_str(),contextptr),1,contextptr);
+          out.push_back("   Check: expand(" + resstr + ") = " + khicas_gstr(chk,contextptr));
+        }
+      }
+      return out;
+    }
+
+    // ---- diff: name the outermost rule, expand one level with _derive.
+    std::vector<std::string> khicas_steps_diff(const gen & e, const gen & var, const std::string & resstr, giac::context * contextptr){
+      std::vector<std::string> out;
+      std::string vs = khicas_gstr(var,contextptr);
+      out.push_back("Steps for: d/d"+vs+" ["+khicas_gstr(e,contextptr)+"]");
+      if (e.is_symb_of_sommet(at_plus)){
+        out.push_back("1. Sum rule: differentiate term by term.");
+        const vecteur & v = *e._SYMBptr->feuille._VECTptr;
+        for (size_t i=0;i<v.size() && i<6;++i)
+          out.push_back("   d/d"+vs+" ["+khicas_gstr(v[i],contextptr)+"] = "+khicas_gstr(_derive(makesequence(v[i],var),contextptr),contextptr));
+      } else if (e.is_symb_of_sommet(at_prod)){
+        const vecteur & v = *e._SYMBptr->feuille._VECTptr;
+        gen u = v[0], vv = v[1]; // binary split: u = first factor
+        for (size_t i=2;i<v.size();++i) vv = vv*v[i];
+        gen up = _derive(makesequence(u,var),contextptr);
+        gen vp = _derive(makesequence(vv,var),contextptr);
+        out.push_back("1. Product rule: (u*v)' = u'*v + u*v'.");
+        out.push_back("   u = "+khicas_gstr(u,contextptr)+",  u' = "+khicas_gstr(up,contextptr));
+        out.push_back("   v = "+khicas_gstr(vv,contextptr)+",  v' = "+khicas_gstr(vp,contextptr));
+        out.push_back("2. = "+khicas_gstr(up*vv+u*vp,contextptr)+"  (before simplifying)");
+      } else if (e.is_symb_of_sommet(at_pow)){
+        out.push_back("1. Power rule (+ chain rule on the base if it is not just "+vs+").");
+      } else if (e.is_symb_of_sommet(at_sin)||e.is_symb_of_sommet(at_cos)||e.is_symb_of_sommet(at_tan)||e.is_symb_of_sommet(at_exp)||e.is_symb_of_sommet(at_ln)){
+        out.push_back("1. Chain rule: d/dx f(g(x)) = f'(g(x)) * g'(x).");
+      } else {
+        out.push_back("1. Apply the differentiation rules to "+khicas_gstr(e,contextptr)+".");
+      }
+      out.push_back("=> "+resstr+"   (simplified)");
+      return out;
+    }
+
+    // ---- integrate: rule templates; term-by-term expansion for sums.
+    std::vector<std::string> khicas_steps_integrate(const gen & e, const gen & var, bool definite, const std::string & resstr, giac::context * contextptr){
+      std::vector<std::string> out;
+      std::string vs = khicas_gstr(var,contextptr);
+      out.push_back("Steps for: integrate("+khicas_gstr(e,contextptr)+","+vs+(definite?")  [definite]":")"));
+      if (e.is_symb_of_sommet(at_plus)){
+        out.push_back("1. Integrate term by term.");
+        const vecteur & v = *e._SYMBptr->feuille._VECTptr;
+        for (size_t i=0;i<v.size() && i<6;++i)
+          out.push_back("   int("+khicas_gstr(v[i],contextptr)+") = "+khicas_gstr(_integrate(makesequence(v[i],var),contextptr),contextptr));
+      } else if (e.is_symb_of_sommet(at_pow)){
+        out.push_back("1. Power rule: int(x^n) = x^(n+1)/(n+1)"+std::string(definite?"":" (+ C)")+".");
+      } else if (e.is_symb_of_sommet(at_inv)){
+        out.push_back("1. int(1/x) dx = ln|x|"+std::string(definite?"":" (+ C)")+".");
+      } else if (e.is_symb_of_sommet(at_sin)||e.is_symb_of_sommet(at_cos)||e.is_symb_of_sommet(at_exp)){
+        out.push_back("1. Basic antiderivative (+ chain-rule factor if the argument is not just "+vs+").");
+      } else {
+        out.push_back("1. Apply u-substitution / integration by parts as needed.");
+      }
+      if (definite) out.push_back("2. Evaluate F(b)-F(a).");
+      out.push_back("=> "+resstr);
+      return out;
+    }
+
+    // Dispatch: re-parse the remembered input, build the step lines.
+    std::vector<std::string> khicas_build_steps(giac::context * contextptr){
+      std::vector<std::string> out;
+      if (khicas_steps_optype.empty() || khicas_steps_input.empty()){
+        out.push_back("Nothing to explain yet: run factor(...), diff(...) or integrate(...) first, then type steps().");
+        return out;
+      }
+      gen gg(khicas_steps_input.c_str(), contextptr); // re-parse remembered input
+      if (khicas_steps_optype=="factor" && gg.is_symb_of_sommet(at_factor))
+        return khicas_steps_factor(gg._SYMBptr->feuille, khicas_steps_result, contextptr);
+      if (khicas_steps_optype=="diff" && gg.is_symb_of_sommet(at_derive)){
+        const vecteur & v = *gg._SYMBptr->feuille._VECTptr; // [expr, var] or [expr, var, n]
+        if (v.size()>=2) return khicas_steps_diff(v[0], v[1], khicas_steps_result, contextptr);
+      }
+      if (khicas_steps_optype=="integrate" && gg.is_symb_of_sommet(at_integrate)){
+        const vecteur & v = *gg._SYMBptr->feuille._VECTptr; // [expr, var] or [expr, var, a, b]
+        if (v.size()>=2) return khicas_steps_integrate(v[0], v[1], v.size()>=4, khicas_steps_result, contextptr);
+      }
+      out.push_back("Steps for: "+khicas_steps_input); // state out of sync: generic
+      out.push_back("=> "+khicas_steps_result);
+      return out;
+    }
+
+    // Remember the last successful factor/diff/integrate for steps().
+    // Called from run() right after the history push.
+    void khicas_record_last(const char * s, const gen & g, const gen & ge, giac::context * contextptr){
+      if (!strcmp(s,"restart")){ // keep in sync with history clearing
+        khicas_steps_input.clear(); khicas_steps_optype.clear(); khicas_steps_result.clear();
+        return;
+      }
+      if (giac::first_error_line(contextptr)) return; // never record failures
+      std::string op;
+      if (g.is_symb_of_sommet(at_factor)) op="factor";
+      else if (g.is_symb_of_sommet(at_derive)) op="diff";       // diff() parses to at_derive
+      else if (g.is_symb_of_sommet(at_integrate)) op="integrate"; // int() parses to at_integrate
+      if (op.empty()){ // string fallback for aliases the parser may rename
+        std::string t = khicas_trim(s);
+        if (t.compare(0,7,"factor(")==0) op="factor";
+        else if (t.compare(0,5,"diff(")==0 || t.compare(0,7,"derive(")==0) op="diff";
+        else if (t.compare(0,10,"integrate(")==0 || t.compare(0,4,"int(")==0) op="integrate";
+      }
+      if (op.empty()) return; // only the three supported ops are remembered
+      khicas_steps_input = khicas_trim(s).substr(0, KHICAS_STEPS_MAXLEN);
+      khicas_steps_optype = op;
+      khicas_steps_result = khicas_gstr(ge, contextptr);
+    }
+  } // anonymous namespace
+
   int run(const char * s,int do_logo_graph_eqw,GIAC_CONTEXT){
     if (strlen(s)>=2 && (s[0]=='#' ||
 			 (s[0]=='/' && (s[1]=='/' || s[1]=='*'))
 			 ))
       return 0;
+
+    // KhiCAS steps() feature: explain the last factor/diff/integrate.
+    // Handled here like the other console built-ins, so Giac's parser
+    // never sees the pseudo-command (no lexer/parser changes needed).
+    // steps() itself is never recorded, so repeated steps() calls work.
+    if (khicas_is_steps_cmd(s)){
+      std::vector<std::string> steplines = khicas_build_steps(contextptr);
+      for (size_t i=0;i<steplines.size();++i){
+        Console_Output(steplines[i].c_str());
+        Console_NewLine(LINE_TYPE_OUTPUT,1);
+      }
+      return 0;
+    }
     if (strcmp(s,"caseval(\"\")")==0 || strcmp(s,"eval_expr(\"\")")==0 || (strlen(s)>=4 && strlen(s)<6 && strncmp(s,"xcas",4)==0)){
       xcas_python_eval=0;
       int p=python_compat(contextptr);
@@ -15648,6 +15855,10 @@ namespace xcas {
 	vout.erase(vout.begin());
       vout.push_back(ge);
     }
+
+    // KhiCAS steps() feature: remember this command if it was a
+    // successful factor()/diff()/integrate().
+    khicas_record_last(s,g,ge,contextptr);
     if (check_do_graph(ge,g,do_logo_graph_eqw,contextptr)==KEY_SHUTDOWN)
       return KEY_SHUTDOWN;
     string s_;
