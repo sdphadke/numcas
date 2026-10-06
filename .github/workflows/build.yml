@@ -32,6 +32,14 @@ jobs:
         run: make build NWLINK="nwlink"
       - name: Run make check
         run: make check NWLINK="nwlink"
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: |
+            output/autoconf/*/configure.log
+            output/autoconf/*/make.log
       - name: Upload numcas build
         uses: actions/upload-artifact@v4
         with:
@@ -39,7 +47,7 @@ jobs:
           path: output/numcas.nwa
           if-no-files-found: error
       - name: Release on tag
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: success() && startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           name: "numcas ${{ github.ref_name }} — CAS for NumWorks, Modernized"
