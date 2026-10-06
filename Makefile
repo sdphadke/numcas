@@ -4,7 +4,7 @@ CXX = arm-none-eabi-g++
 AR = arm-none-eabi-ar
 RANLIB = arm-none-eabi-ranlib
 STRIP = arm-none-eabi-strip
-NWLINK = npx --yes -- nwlink@0.0.15
+NWLINK ?= nwlink
 
 DEBUG = 0
 LINK_GC = 1
@@ -142,6 +142,12 @@ output/icon.o: src/icon.png
 	@mkdir -p output
 	@echo "ICON    $<"
 	$(Q) $(NWLINK) png-icon-o $< $@
+
+
+.PHONY: check-eadk
+check-eadk:
+	@test -n "$(shell $(NWLINK) eadk-cflags)" || { echo "error: '$(NWLINK) eadk-cflags' returned empty - EADK headers unavailable" >&2; exit 1; }
+	@echo "EADK flags: $(shell $(NWLINK) eadk-cflags)"
 
 .PHONY: clean
 clean:
