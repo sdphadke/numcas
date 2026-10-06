@@ -1,17 +1,40 @@
 name: Build
-on: [pull_request, push]
+on:
+  push:
+    branches: [ master, main ]
+    tags: [ 'v*' ]
+  pull_request:
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Install toolchain
         uses: numworks/setup-arm-toolchain@2020-q2
-      - name: Intall autoconf macros
-        run: sudo apt-get install -y autoconf-archive
+      - name: Install autoconf macros
+        run: sudo apt-get update && sudo apt-get install -y autoconf-archive
       - name: Run make build
         run: make build
       - name: Run make check
         run: make check
+      - name: Upload numcas build
+        uses: actions/upload-artifact@v4
+        with:
+          name: numcas-nwa
+          path: output/khicas.nwa
+          if-no-files-found: error
+      - name: Release on tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "numcas ${{ github.ref_name }} — CAS for NumWorks, Modernized"
+          body: |
+            numcas — CAS for NumWorks, Modernized.
+
+            Flash `khicas.nwa` to your NumWorks calculator (firmware v26).
+          files: output/khicas.nwa
