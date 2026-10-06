@@ -145,50 +145,7 @@ diff --git a/src/giac/src/kdisplay.cc b/src/giac/src/kdisplay.cc
      WriteMemory((char *)target, (const char *)tab, writenext?2:1);
  #else
      target[0]=tab[0];
-@@ -15189,18 +15191,17 @@
-     smallmenuitems[2].text = (char*)"Radians (in Xcas)";
-     smallmenuitems[3].type = MENUITEM_CHECKBOX;
-     smallmenuitems[3].text = (char*)"Sqrt (in Xcas)";
--    smallmenuitems[4].text = (char*)"Francais";
--    smallmenuitems[5].text = (char*)"English";
--    smallmenuitems[6].text = (char*)"Spanish&English";
--    smallmenuitems[7].text = (char*)"Greek&English";
--    smallmenuitems[8].text = (char*)"Deutsch&English";
--    smallmenuitems[9].text = (char *) ((lang==1)?"Raccourcis clavier (0)":"Shortcuts (0)");
-+    smallmenuitems[4].text = (char*)"English";
-+    smallmenuitems[5].text = (char*)"Spanish&English";
-+    smallmenuitems[6].text = (char*)"Greek&English";
-+    smallmenuitems[7].text = (char*)"Deutsch&English";
-+    smallmenuitems[8].text = (char *) ((lang==1)?"Raccourcis clavier (0)":"Shortcuts (0)");
- #ifdef NUMWORKS
--    smallmenuitems[10].text = (char*) ((lang==1)?"Backup, mode examen (e^x)":"Backup, exam mode (e^x)");
-+    smallmenuitems[9].text = (char*) ((lang==1)?"Backup, mode examen (e^x)":"Backup, exam mode (e^x)");
- #else
--    smallmenuitems[10].text = (char*) ((lang==1)?"Mode examen (e^x)":"Exam mode (e^x)");
-+    smallmenuitems[9].text = (char*) ((lang==1)?"Mode examen (e^x)":"Exam mode (e^x)");
- #endif
--    smallmenuitems[11].text = (char*) ((lang==1)?"A propos":"About");
-+    smallmenuitems[10].text = (char*) ((lang==1)?"A propos":"About");
-     smallmenuitems[14].text = (char*) "Quit";
-     if (exam_mode)
-       smallmenuitems[14].text = (char*)((lang==1)?"Quitter le mode examen":"Quit exam mode");
-@@ -15299,12 +15300,12 @@
- 	  giac::withsqrt(!giac::withsqrt(contextptr),contextptr);
- 	  continue;
- 	}
--	if (smallmenu.selection>=5 && smallmenu.selection<=9){
--	  lang=smallmenu.selection-4;
-+	if (smallmenu.selection>=5 && smallmenu.selection<=8){
-+	  lang=smallmenu.selection-3;
- 	  giac::language(lang,contextptr);
- 	  break;
- 	}
--	if (smallmenu.selection == 11){
-+	if (smallmenu.selection == 10){
- #ifdef NSPIRE_NEWLIB
- 	  if (nspire_exam_mode==1
- 	      && !is_cx2
-@@ -15322,7 +15323,7 @@
+@@ -15322,7 +15324,7 @@
  	    nspire_exam_mode=2;
  	    set_exam_mode(0,contextptr);
  	    *logptr(contextptr) << (lang==1?"Leds eteintes. Mode restreint (pas d'acces aux fichiers).\n":"Leds off. Restricted mode (no file access).\n");
@@ -197,7 +154,7 @@ diff --git a/src/giac/src/kdisplay.cc b/src/giac/src/kdisplay.cc
  	    break;
  	  }
  	  else {
-@@ -15340,7 +15341,7 @@
+@@ -15340,7 +15342,7 @@
  	      break;
  	    }
  	    else {
@@ -206,7 +163,7 @@ diff --git a/src/giac/src/kdisplay.cc b/src/giac/src/kdisplay.cc
  	      break;
  	    }
  	    if (1
-@@ -15349,12 +15350,12 @@
+@@ -15349,12 +15351,12 @@
  	      textArea text;
  	      text.editable=false;
  	      text.clipline=-1;
@@ -224,7 +181,7 @@ diff --git a/src/giac/src/kdisplay.cc b/src/giac/src/kdisplay.cc
  	      add(&text,(lang==1)?exam_mode_fr_string:exam_mode_en_string);
  	      if (doTextArea(&text,contextptr)==KEY_SHUTDOWN)
  		return ;
-@@ -15565,7 +15566,7 @@
+@@ -15565,7 +15567,7 @@
    const int max_lines_saved=50;
  
    // =====================================================================
@@ -233,7 +190,7 @@ diff --git a/src/giac/src/kdisplay.cc b/src/giac/src/kdisplay.cc
    // Remembers the last successful factor()/diff()/integrate() evaluation and
    // prints a short step-by-step explanation when the user types steps().
    // * Intercepted in run() next to the other console built-ins, so Giac's
-@@ -15578,13 +15579,13 @@
+@@ -15578,13 +15580,13 @@
    //   so this is independent of the EADK/OS version (incl. v26).
    // =====================================================================
    namespace {
@@ -252,7 +209,7 @@ diff --git a/src/giac/src/kdisplay.cc b/src/giac/src/kdisplay.cc
        size_t a = s.find_first_not_of(" \t\r\n");
        if (a==std::string::npos) return std::string();
        size_t b = s.find_last_not_of(" \t\r\n");
-@@ -15592,7 +15593,7 @@
+@@ -15592,7 +15594,7 @@
      }
  
      // Doubles that are really integers print without ".000000".
@@ -261,7 +218,7 @@ diff --git a/src/giac/src/kdisplay.cc b/src/giac/src/kdisplay.cc
        char buf[64];
        if (d==floor(d) && fabs(d)<1e15) snprintf(buf,sizeof(buf),"%.0f",d);
        else snprintf(buf,sizeof(buf),"%.6g",d);
-@@ -15600,30 +15601,30 @@
+@@ -15600,30 +15602,30 @@
      }
  
      // gen -> string, truncated for the small console.
@@ -301,7 +258,7 @@ diff --git a/src/giac/src/kdisplay.cc b/src/giac/src/kdisplay.cc
        bool done = false;
        gen vars = _lname(arg, contextptr); // variables occurring in arg
        if (vars.type==_VECT && vars._VECTptr->size()==1){
-@@ -15631,14 +15632,14 @@
+@@ -15631,14 +15633,14 @@
          gen co = _coeff(makesequence(arg,x), contextptr); // ascending [c,b,a]
          if (co.type==_VECT && co._VECTptr->size()==3){
            double a,b,c;
@@ -322,7 +279,7 @@ diff --git a/src/giac/src/kdisplay.cc b/src/giac/src/kdisplay.cc
              out.push_back("4. => "+resstr);
              done = true;
            }
-@@ -15648,23 +15649,23 @@
+@@ -15648,23 +15650,23 @@
          out.push_back("1. Factor the polynomial over the integers Z.");
          out.push_back("2. => "+resstr);
          if (resstr.size()<3 || resstr.substr(resstr.size()-3)!="..."){
@@ -352,7 +309,7 @@ diff --git a/src/giac/src/kdisplay.cc b/src/giac/src/kdisplay.cc
        } else if (e.is_symb_of_sommet(at_prod)){
          const vecteur & v = *e._SYMBptr->feuille._VECTptr;
          gen u = v[0], vv = v[1]; // binary split: u = first factor
-@@ -15672,30 +15673,30 @@
+@@ -15672,30 +15674,30 @@
          gen up = _derive(makesequence(u,var),contextptr);
          gen vp = _derive(makesequence(vv,var),contextptr);
          out.push_back("1. Product rule: (u*v)' = u'*v + u*v'.");
@@ -391,7 +348,7 @@ diff --git a/src/giac/src/kdisplay.cc b/src/giac/src/kdisplay.cc
        } else if (e.is_symb_of_sommet(at_pow)){
          out.push_back("1. Power rule: int(x^n) = x^(n+1)/(n+1)"+std::string(definite?"":" (+ C)")+".");
        } else if (e.is_symb_of_sommet(at_inv)){
-@@ -15711,33 +15712,33 @@
+@@ -15711,33 +15713,33 @@
      }
  
      // Dispatch: re-parse the remembered input, build the step lines.
@@ -438,7 +395,7 @@ diff --git a/src/giac/src/kdisplay.cc b/src/giac/src/kdisplay.cc
          return;
        }
        if (giac::first_error_line(contextptr)) return; // never record failures
-@@ -15746,15 +15747,15 @@
+@@ -15746,15 +15748,15 @@
        else if (g.is_symb_of_sommet(at_derive)) op="diff";       // diff() parses to at_derive
        else if (g.is_symb_of_sommet(at_integrate)) op="integrate"; // int() parses to at_integrate
        if (op.empty()){ // string fallback for aliases the parser may rename
@@ -458,7 +415,7 @@ diff --git a/src/giac/src/kdisplay.cc b/src/giac/src/kdisplay.cc
      }
    } // anonymous namespace
  
-@@ -15764,12 +15765,12 @@
+@@ -15764,12 +15766,12 @@
  			 ))
        return 0;
  
@@ -474,7 +431,7 @@ diff --git a/src/giac/src/kdisplay.cc b/src/giac/src/kdisplay.cc
        for (size_t i=0;i<steplines.size();++i){
          Console_Output(steplines[i].c_str());
          Console_NewLine(LINE_TYPE_OUTPUT,1);
-@@ -15856,9 +15857,9 @@
+@@ -15856,9 +15858,9 @@
        vout.push_back(ge);
      }
  
@@ -486,7 +443,7 @@ diff --git a/src/giac/src/kdisplay.cc b/src/giac/src/kdisplay.cc
      if (check_do_graph(ge,g,do_logo_graph_eqw,contextptr)==KEY_SHUTDOWN)
        return KEY_SHUTDOWN;
      string s_;
-@@ -15945,7 +15946,7 @@
+@@ -15945,7 +15947,7 @@
      return 0;
    }
  
@@ -495,7 +452,7 @@ diff --git a/src/giac/src/kdisplay.cc b/src/giac/src/kdisplay.cc
      giac::gen g(giac::_VARS(-1,contextptr)); 
      int b=python_compat(contextptr);
      python_compat(0,contextptr);
-@@ -16034,7 +16035,7 @@
+@@ -16034,7 +16036,7 @@
    }
    void save_console_state_smem(const char * filename,bool xwaspy,GIAC_CONTEXT){
      console_changed=0;
@@ -504,7 +461,7 @@ diff --git a/src/giac/src/kdisplay.cc b/src/giac/src/kdisplay.cc
      int statesize=state.size();
      string script;
      if (edptr)
-@@ -16931,8 +16932,8 @@
+@@ -16931,8 +16933,8 @@
  #ifdef NSPIRE_NEWLIB
      filename+=".tns";
  #endif
@@ -515,13 +472,7 @@ diff --git a/src/giac/src/kdisplay.cc b/src/giac/src/kdisplay.cc
      if (edptr)
        check_leave(edptr);
  #endif
-@@ -17036,12 +17037,11 @@
-       filename += ".py";
- #endif
-     if (!load_console_state_smem(filename.c_str(),contextptr)){
--      if (confirm("OK: Francais, Back: English","set_language(1|0)")==KEY_CTRL_F6)
--	lang=0;
-+      lang=0; // French removed, English only
+@@ -17041,7 +17043,7 @@
        numworks_certify_internal();
        Bdisp_AllClr_VRAM();
        int x=0,y=0;
@@ -530,7 +481,7 @@ diff --git a/src/giac/src/kdisplay.cc b/src/giac/src/kdisplay.cc
        y +=18;
        PrintMini(x,y,"et al, License GPL 2",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
        y += 18;
-@@ -17051,12 +17051,12 @@
+@@ -17051,12 +17053,12 @@
        PrintMini(x,y,((lang==1)?"Taper HOME plusieurs fois":"Type HOME several times"),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
  #endif
        y += 18;
@@ -545,7 +496,7 @@ diff --git a/src/giac/src/kdisplay.cc b/src/giac/src/kdisplay.cc
        if (confirm("Interpreter? enter: Xcas, esc: MicroPython",(lang==1?"Peut se modifier depuis menu configuration":"May be changed later from menu configuration"),false,130)==KEY_CTRL_F6){
  	python_compat(4,contextptr);
  	xcas_python_eval=1;
-@@ -17068,7 +17068,7 @@
+@@ -17068,7 +17070,7 @@
  	*logptr(contextptr) << "Xcas interpreter, Python compatible mode\n";
        }
  #else
@@ -554,7 +505,7 @@ diff --git a/src/giac/src/kdisplay.cc b/src/giac/src/kdisplay.cc
        if (confirm("Interpreter? OK: Xcas, Back: MicroPython",(lang==1?"Peut se modifier depuis menu configuration":"May be changed later from menu configuration"),false,130)==KEY_CTRL_F6){
  	python_compat(4,contextptr);
  	xcas_python_eval=1;
-@@ -17088,13 +17088,13 @@
+@@ -17088,13 +17090,13 @@
  	*logptr(contextptr) << "Ne faites pas de mises a jour\n";
  	*logptr(contextptr) << "depuis le site de Numworks.\n";
  	*logptr(contextptr) << "Cela verrouille la Numworks\n";
@@ -570,13 +521,7 @@ diff --git a/src/giac/src/kdisplay.cc b/src/giac/src/kdisplay.cc
        }
  #endif
        Bdisp_AllClr_VRAM();
-@@ -17143,12 +17143,11 @@
- #endif
-     if (!load_console_state_smem(filename.c_str(),contextptr)){
- #ifdef NUMWORKS
--      if (confirm("OK: Francais, Back: English","set_language(1|0)")==KEY_CTRL_F6)
--	lang=0;
-+      lang=0; // French removed, English only
+@@ -17148,7 +17150,7 @@
        Bdisp_AllClr_VRAM();
  #endif
        int x=0,y=0;
@@ -585,7 +530,7 @@ diff --git a/src/giac/src/kdisplay.cc b/src/giac/src/kdisplay.cc
        y +=18;
        PrintMini(x,y,"et al, License GPL 2",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
        y += 18;
-@@ -17158,12 +17157,12 @@
+@@ -17158,12 +17160,12 @@
        PrintMini(x,y,((lang==1)?"Taper HOME plusieurs fois":"Type HOME several times"),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
  #endif
        y += 18;
@@ -600,7 +545,7 @@ diff --git a/src/giac/src/kdisplay.cc b/src/giac/src/kdisplay.cc
        if (confirm("Interpreter? enter: Xcas, esc: MicroPython",(lang==1?"Peut se modifier depuis menu configuration":"May be changed later from menu configuration"),false,130)==KEY_CTRL_F6){
  	python_compat(4,contextptr);
  	xcas_python_eval=1;
-@@ -17175,7 +17174,7 @@
+@@ -17175,7 +17177,7 @@
  	*logptr(contextptr) << "Xcas interpreter, Python compatible mode\n";
        }
  #else
@@ -609,7 +554,7 @@ diff --git a/src/giac/src/kdisplay.cc b/src/giac/src/kdisplay.cc
        if (confirm("Interpreter? OK: Xcas, Back: MicroPython",(lang==1?"Peut se modifier depuis menu configuration":"May be changed later from menu configuration"),false,130)==KEY_CTRL_F6){
  	python_compat(4,contextptr);
  	xcas_python_eval=1;
-@@ -17613,7 +17612,7 @@
+@@ -17613,7 +17615,7 @@
  	smallmenu.height=12;
  	smallmenu.scrollbar=1;
  	smallmenu.scrollout=1;
@@ -618,7 +563,7 @@ diff --git a/src/giac/src/kdisplay.cc b/src/giac/src/kdisplay.cc
  	// smallmenuitems[2].text = (char*)(isRecording ? "Stop Recording" : "Record Script");
  	while(1) {
  	  // moved inside the loop because lang might change
-@@ -17852,7 +17851,7 @@
+@@ -17852,7 +17854,7 @@
  #endif
        }
        if (key==KEY_SHIFT_ANS){ // 3rd party app
@@ -627,7 +572,7 @@ diff --git a/src/giac/src/kdisplay.cc b/src/giac/src/kdisplay.cc
  	if (res==KEY_CTRL_MENU)
  	  return res;
  	Console_Disp(1,contextptr);
-@@ -18945,7 +18944,9 @@
+@@ -18945,7 +18947,9 @@
      if (pythonjs_heap_size>_heap_size-52*1024)
        pythonjs_heap_size=_heap_size-52*1024;
  #endif
@@ -637,7 +582,7 @@ diff --git a/src/giac/src/kdisplay.cc b/src/giac/src/kdisplay.cc
      //volatile int stackTop;
      //mp_stack_set_top((void *)(&stackTop));
      //mp_stack_set_limit(24*1024);
-@@ -19931,4 +19932,4 @@
+@@ -19931,4 +19935,4 @@
      }
    }    
  
