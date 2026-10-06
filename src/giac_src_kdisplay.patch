@@ -5,8 +5,7 @@ diff --git a/src/giac/src/kdisplay.cc b/src/giac/src/kdisplay.cc
  
  
  
--#ifdef KHICAS
-+#ifdef NUMCAS
+ #ifdef KHICAS
  
  #ifdef NUMWORKS
  char * freeptr=0;
@@ -587,4 +586,4 @@ diff --git a/src/giac/src/kdisplay.cc b/src/giac/src/kdisplay.cc
    }    
  
 -#endif // KHICAS
-+#endif // NUMCAS
++#endif // KHICAS
