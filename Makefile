@@ -18,7 +18,7 @@ CFLAGS += -fno-exceptions -fno-use-cxa-atexit
 
 LDFLAGS = -Wl,--relocatable
 LDFLAGS += -nostartfiles
-LDFLAGS += --specs=nosys.specs
+LDFLAGS += --specs=nano.specs --specs=nosys.specs
 LDFLAGS += -L$(LIBS_PATH)/lib -lc_nano -lstdc++_nano -lm -lgmp -lmpfr -lmpfi
 
 ifeq ($(DEBUG),1)
