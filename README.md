@@ -1,13 +1,20 @@
-# KhiCAS for NumWorks
+# numcas
 
-[![Build](https://github.com/nwagyu/khicas/actions/workflows/build.yml/badge.svg)](https://github.com/nwagyu/khicas/actions/workflows/build.yml)
+**CAS for NumWorks, Modernized.**
 
-This apps lets you run [Xcas](https://www-fourier.ujf-grenoble.fr/~parisse/giac.html) on your [NumWorks calculator](https://www.numworks.com).
+numcas lets you run [Xcas](https://www-fourier.ujf-grenoble.fr/~parisse/giac.html) on your [NumWorks calculator](https://www.numworks.com) — modernized for current firmware, with new features on top.
+
+[![Build](https://github.com/sdphadke/numcas/actions/workflows/build.yml/badge.svg)](https://github.com/sdphadke/numcas/actions/workflows/build.yml)
+
+## What's new
+
+- `steps()` — after a `factor`, `diff`, or `integrate` computation, call `steps()` (or `last_steps()`) to see a step-by-step explanation of the computation.
+- Targets NumWorks firmware v26.
 
 ## Install the app
 
 Installing is rather easy:
-1. Download the latest `khicas.nwa` file from the [Releases](https://github.com/nwagyu/khicas/releases) page
+1. Download the latest `khicas.nwa` file from the [Releases](https://github.com/sdphadke/numcas/releases) page
 2. Get a [Nwagra](https://www.nwagyu.com/pages/extended-memory/) pill
 3. Head to [my.numworks.com/apps](https://my.numworks.com/apps) to send the `nwa` file on your calculator
 
@@ -31,3 +38,9 @@ brew install numworks/tap/arm-none-eabi-gcc node # Or equivalent on your OS
 npm install -g nwlink
 make clean && make build
 ```
+
+The built app lands at `output/khicas.nwa`. Every push is also built automatically by GitHub Actions — grab the artifact from the Actions tab, or download a tagged release.
+
+## Credits
+
+Forked from [nwagyu/khicas](https://github.com/nwagyu/khicas), which ports Xcas/Giac to NumWorks.
