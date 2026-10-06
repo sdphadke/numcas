@@ -44,7 +44,7 @@ LDFLAGS += -flinker-output=nolto-rel
 endif
 
 .PHONY: build
-build: output/khicas.nwa
+build: output/numcas.nwa
 
 ###
 # External libs
@@ -114,13 +114,13 @@ output/main.o: src/main.cpp
 	$(Q) $(CXX) $(CFLAGS)  -c $< -o $@
 
 .PHONY: build
-build: output/khicas.nwa
+build: output/numcas.nwa
 
 .PHONY: check
-check: output/khicas.bin
+check: output/numcas.bin
 
 .PHONY: run
-run: output/khicas.nwa
+run: output/numcas.nwa
 	@echo "INSTALL $<"
 	$(Q) $(NWLINK) install-nwa $<
 
@@ -132,7 +132,7 @@ output/%.elf: output/%.nwa
 	@echo "ELF     $@"
 	$(Q) $(NWLINK) nwa-elf $< $@
 
-output/khicas.nwa: output/main.o output/icon.o $(giac_objs)
+output/numcas.nwa: output/main.o output/icon.o $(giac_objs)
 	@echo "LD      $@"
 	$(Q) $(CC) $(CFLAGS) $(LDFLAGS) $^ -lc_nano -lstdc++_nano -lm -lmpfi -lmpfr -lgmp -o $@
 	@echo "STRIP   $@"

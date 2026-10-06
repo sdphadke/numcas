@@ -4,7 +4,7 @@ extern "C" {
 }
 #include <cstring>
 
-extern const char eadk_app_name[] __attribute__((section(".rodata.eadk_app_name"))) = "KhiCAS";
+extern const char eadk_app_name[] __attribute__((section(".rodata.eadk_app_name"))) = "numcas";
 extern const uint32_t eadk_api_level __attribute__((section(".rodata.eadk_api_level"))) = 0;
 
 extern "C" {
