@@ -26,7 +26,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: numcas-nwa
-          path: output/khicas.nwa
+          path: output/numcas.nwa
           if-no-files-found: error
       - name: Release on tag
         if: startsWith(github.ref, 'refs/tags/v')
@@ -36,5 +36,5 @@ jobs:
           body: |
             numcas — CAS for NumWorks, Modernized.
 
-            Flash `khicas.nwa` to your NumWorks calculator (firmware v26).
-          files: output/khicas.nwa
+            Flash `numcas.nwa` to your NumWorks calculator (firmware v26).
+          files: output/numcas.nwa
