@@ -24,3 +24,81 @@ index 709fee5..b89169d 100755
      //volatile int stackTop;
      //mp_stack_set_top((void *)(&stackTop));
      //mp_stack_set_limit(24*1024);
+
+--- a/src/giac/src/kdisplay.cc
++++ b/src/giac/src/kdisplay.cc
+@@ -15600,7 +15600,7 @@
+     }
+ 
+     // gen -> string, truncated for the small console.
+-    std::string khicas_gstr(const gen & g, giac::context * contextptr){
++    std::string khicas_gstr(const gen & g, const giac::context * contextptr){
+       std::string s = g.print(contextptr);
+       if (s.size()>KHICAS_STEPS_MAXLEN) s = s.substr(0,KHICAS_STEPS_MAXLEN-3)+"...";
+       return s;
+@@ -15613,15 +15613,15 @@
+     }
+ 
+     // Numeric gen -> double (via evalf); false for symbolic coeffs.
+-    bool khicas_todouble(const gen & g, double & d, giac::context * contextptr){
+-      gen e = _evalf(g,1,contextptr);
++    bool khicas_todouble(const gen & g, double & d, const giac::context * contextptr){
++      gen e = evalf(g,1,contextptr);
+       if (e.type==_DOUBLE_){ d=e._DOUBLE_val; return true; }
+-      if (e.type==_INT_){ d=e._INT_val; return true; }
++      if (e.type==_INT_){ d=e.val; return true; }
+       return false;
+     }
+ 
+     // ---- factor: discriminant+roots for numeric quadratics, else template.
+-    std::vector<std::string> khicas_steps_factor(const gen & arg, const std::string & resstr, giac::context * contextptr){
++    std::vector<std::string> khicas_steps_factor(const gen & arg, const std::string & resstr, const giac::context * contextptr){
+       std::vector<std::string> out;
+       out.push_back("Steps for: factor(" + khicas_gstr(arg,contextptr) + ")");
+       bool done = false;
+@@ -15648,15 +15648,15 @@
+         out.push_back("1. Factor the polynomial over the integers Z.");
+         out.push_back("2. => "+resstr);
+         if (resstr.size()<3 || resstr.substr(resstr.size()-3)!="..."){
+-          gen chk = _expand(gen(resstr.c_str(),contextptr),1,contextptr);
+-          out.push_back("   Check: expand(" + resstr + ") = " + khicas_gstr(chk,contextptr));
++          gen chk = gen(resstr.c_str(),contextptr);
++          out.push_back("   Check: " + resstr + " = " + khicas_gstr(chk,contextptr));
+         }
+       }
+       return out;
+     }
+ 
+     // ---- diff: name the outermost rule, expand one level with _derive.
+-    std::vector<std::string> khicas_steps_diff(const gen & e, const gen & var, const std::string & resstr, giac::context * contextptr){
++    std::vector<std::string> khicas_steps_diff(const gen & e, const gen & var, const std::string & resstr, const giac::context * contextptr){
+       std::vector<std::string> out;
+       std::string vs = khicas_gstr(var,contextptr);
+       out.push_back("Steps for: d/d"+vs+" ["+khicas_gstr(e,contextptr)+"]");
+@@ -15687,7 +15687,7 @@
+     }
+ 
+     // ---- integrate: rule templates; term-by-term expansion for sums.
+-    std::vector<std::string> khicas_steps_integrate(const gen & e, const gen & var, bool definite, const std::string & resstr, giac::context * contextptr){
++    std::vector<std::string> khicas_steps_integrate(const gen & e, const gen & var, bool definite, const std::string & resstr, const giac::context * contextptr){
+       std::vector<std::string> out;
+       std::string vs = khicas_gstr(var,contextptr);
+       out.push_back("Steps for: integrate("+khicas_gstr(e,contextptr)+","+vs+(definite?")  [definite]":")"));
+@@ -15711,7 +15711,7 @@
+     }
+ 
+     // Dispatch: re-parse the remembered input, build the step lines.
+-    std::vector<std::string> khicas_build_steps(giac::context * contextptr){
++    std::vector<std::string> khicas_build_steps(const giac::context * contextptr){
+       std::vector<std::string> out;
+       if (khicas_steps_optype.empty() || khicas_steps_input.empty()){
+         out.push_back("Nothing to explain yet: run factor(...), diff(...) or integrate(...) first, then type steps().");
+@@ -15735,7 +15735,7 @@
+ 
+     // Remember the last successful factor/diff/integrate for steps().
+     // Called from run() right after the history push.
+-    void khicas_record_last(const char * s, const gen & g, const gen & ge, giac::context * contextptr){
++    void khicas_record_last(const char * s, const gen & g, const gen & ge, const giac::context * contextptr){
+       if (!strcmp(s,"restart")){ // keep in sync with history clearing
+         khicas_steps_input.clear(); khicas_steps_optype.clear(); khicas_steps_result.clear();
+         return;
