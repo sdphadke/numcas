@@ -65,6 +65,11 @@ define autoconf
 output/libs/lib/lib$(1).a:
 	@mkdir -p output/autoconf/$(1)
 	@echo "AUTOCNF $(1)"
+	# Touch generated build files so make doesn't try to regenerate them with
+	# the system's autotools: a rebuild can mix libtool versions (e.g. the
+	# vendored ltmain.sh is 2.4.6 while the system regenerates configure with
+	# 2.4.7 macros) and fail with "Version mismatch error".
+	$(Q) cd src/$(1) && touch -c aclocal.m4 configure config.h.in && find . -name 'Makefile.in' -exec touch -c {} +
 	$(Q) cd output/autoconf/$(1) && ../../../src/$(1)/configure $(2) $(AUTOCONF_FLAGS) > configure.log 2>&1
 	@echo "MAKE    $(1)"
 	$(Q) cd output/autoconf/$(1) && make install > make.log 2>&1
