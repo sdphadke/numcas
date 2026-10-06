@@ -18,10 +18,20 @@ jobs:
         uses: numworks/setup-arm-toolchain@2020-q2
       - name: Install autoconf macros
         run: sudo apt-get update && sudo apt-get install -y autoconf-archive
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install nwlink
+        run: |
+          npm install --global nwlink@0.0.15
+          test -n "$(nwlink eadk-cflags)"
+      - name: Check EADK flags
+        run: make check-eadk NWLINK="nwlink"
       - name: Run make build
-        run: make build
+        run: make build NWLINK="nwlink"
       - name: Run make check
-        run: make check
+        run: make check NWLINK="nwlink"
       - name: Upload numcas build
         uses: actions/upload-artifact@v4
         with:
